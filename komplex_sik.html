@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A komplex sík játszótere — szorzás, hatványok, egységgyökök</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #171209;
+    --panel: #211a0f;
+    --panel2: #2a2114;
+    --border: #4a3b22;
+    --amber: #d9a44a;
+    --amber-bright: #f0c060;
+    --cream: #e8d9b8;
+    --text: #ece0c8;
+    --muted: #a8977a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.55;
+    padding: 2rem 1rem 4rem;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    color: var(--amber);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .subtitle { text-align: center; color: var(--muted); font-style: italic; margin: 0.4rem 0 1.6rem; }
+  .modes { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.2rem; }
+  .modes button {
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.45rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .modes button:hover { border-color: var(--amber); }
+  .modes button.active { background: var(--amber); color: #1a1409; border-color: var(--amber); font-weight: 700; }
+  .modes button:focus-visible { outline: 2px solid var(--amber-bright); outline-offset: 2px; }
+  .main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+  @media (max-width: 820px) { .main { grid-template-columns: 1fr; } }
+  canvas {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: block;
+    touch-action: none;
+    cursor: grab;
+  }
+  .side { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.2rem; }
+  .side h2 { font-family: 'Cinzel', serif; font-size: 1.05rem; color: var(--amber); letter-spacing: 0.05em; margin-bottom: 0.6rem; }
+  .info { font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; line-height: 1.9; }
+  .info .z { color: var(--amber-bright); }
+  .info .w { color: var(--cream); }
+  .info .zw { color: #ffd98a; font-weight: 600; }
+  .hint { margin-top: 0.9rem; color: var(--muted); font-size: 0.95rem; font-style: italic; }
+  .nctrl { display: none; margin-top: 0.8rem; }
+  .nctrl label { font-family: 'JetBrains Mono', monospace; color: var(--amber); font-size: 0.95rem; }
+  .nctrl input[type=range] { width: 100%; accent-color: var(--amber); margin-top: 0.3rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>A komplex sík játszótere</h1>
+  <p class="subtitle">Fogd meg a pontokat, és figyeld, mit művel a szorzás.</p>
+
+  <div class="modes">
+    <button id="mMul" class="active">Szorzás</button>
+    <button id="mPow">Hatványok</button>
+    <button id="mRoots">Egységgyökök</button>
+  </div>
+
+  <div class="main">
+    <canvas id="plane" width="640" height="640" aria-label="Komplex számsík, mozgatható pontokkal"></canvas>
+
+    <div class="side">
+      <h2 id="sideTitle">Mérések</h2>
+      <div class="nctrl" id="nCtrl">
+        <label for="nSlider">n = <span id="nVal">3</span></label>
+        <input type="range" id="nSlider" min="2" max="12" step="1" value="3">
+      </div>
+      <div class="info" id="infoBox"></div>
+      <p class="hint" id="hintBox"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('plane');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const S = 58; // px / unit
+
+  const C = {
+    grid: '#2e2515',
+    axis: '#5a4a2c',
+    unit: '#6b5a35',
+    z: '#f0c060',
+    w: '#e8d9b8',
+    zw: '#ffd98a',
+    muted: '#a8977a',
+    spiral: '#d9a44a'
+  };
+
+  let mode = 'mul';
+  let z = { re: 2, im: 1 };
+  let w = { re: 0.5, im: 1 };
+  let n = 3;
+  let dragging = null;
+
+  const toPx = c => ({ x: cx + c.re * S, y: cy - c.im * S });
+  const toC = (x, y) => ({ re: (x - cx) / S, im: (cy - y) / S });
+  const cmul = (a, b) => ({ re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re });
+  const cabs = a => Math.hypot(a.re, a.im);
+  const carg = a => Math.atan2(a.im, a.re);
+  const deg = r => r * 180 / Math.PI;
+  const fmt = (x, d = 2) => {
+    const r = Math.round(x * 10 ** d) / 10 ** d;
+    return (Object.is(r, -0) ? 0 : r).toString().replace('-', '−');
+  };
+  const fmtC = a => fmt(a.re) + (a.im >= 0 ? ' + ' : ' − ') + fmt(Math.abs(a.im)) + 'i';
+
+  function drawBase() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+    const lim = Math.floor(cx / S);
+    for (let g = -lim; g <= lim; g++) {
+      ctx.beginPath(); ctx.moveTo(cx + g * S, 0); ctx.lineTo(cx + g * S, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, cy + g * S); ctx.lineTo(W, cy + g * S); ctx.stroke();
+    }
+    ctx.strokeStyle = C.axis; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+    // unit circle
+    ctx.strokeStyle = C.unit; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.arc(cx, cy, S, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    // labels
+    ctx.fillStyle = C.muted; ctx.font = '12px JetBrains Mono, monospace';
+    ctx.fillText('1', cx + S + 4, cy - 5);
+    ctx.fillText('i', cx + 6, cy - S - 5);
+    ctx.fillText('−1', cx - S - 20, cy - 5);
+    ctx.fillText('−i', cx + 6, cy + S + 14);
+    ctx.fillText('Re', W - 26, cy - 8);
+    ctx.fillText('Im', cx + 8, 16);
+  }
+
+  function vector(c, color, label, r = 7) {
+    const p = toPx(c);
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.strokeStyle = '#171209'; ctx.lineWidth = 2; ctx.stroke();
+    if (label) {
+      ctx.fillStyle = color;
+      ctx.font = '600 15px JetBrains Mono, monospace';
+      ctx.fillText(label, p.x + 10, p.y - 8);
+    }
+  }
+
+  function arc(angle, radius, color) {
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    // canvas y is flipped: positive math angle = negative canvas angle
+    ctx.arc(cx, cy, radius, 0, -angle, angle > 0);
+    ctx.stroke();
+  }
+
+  function drawMul() {
+    drawBase();
+    const zw = cmul(z, w);
+    arc(carg(z), 26, C.z);
+    arc(carg(w), 36, C.w);
+    arc(carg(zw), 46, C.zw);
+    vector(zw, C.zw, 'z·w', 8);
+    vector(z, C.z, 'z');
+    vector(w, C.w, 'w');
+
+    document.getElementById('sideTitle').textContent = 'Mérések';
+    document.getElementById('infoBox').innerHTML =
+      '<span class="z">z  = ' + fmtC(z) + '<br>|z| = ' + fmt(cabs(z)) + '   arg z = ' + fmt(deg(carg(z)), 1) + '°</span><br>' +
+      '<span class="w">w  = ' + fmtC(w) + '<br>|w| = ' + fmt(cabs(w)) + '   arg w = ' + fmt(deg(carg(w)), 1) + '°</span><br>' +
+      '<span class="zw">z·w = ' + fmtC(zw) + '<br>|z·w| = ' + fmt(cabs(zw)) + '   arg(z·w) = ' + fmt(deg(carg(zw)), 1) + '°</span>';
+    document.getElementById('hintBox').textContent =
+      'Mindkét pont mozgatható. Tipp: tedd w-t az egységkörre, és figyeld, mi marad változatlan.';
+  }
+
+  function drawPow() {
+    drawBase();
+    let acc = { re: 1, im: 0 };
+    const pts = [acc];
+    for (let k = 1; k <= 8; k++) { acc = cmul(acc, z); pts.push(acc); }
+    // spiral polyline
+    ctx.strokeStyle = C.spiral; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    pts.forEach((c, i) => {
+      const p = toPx(c);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    });
+    ctx.stroke(); ctx.setLineDash([]);
+    pts.forEach((c, i) => {
+      if (i === 1) return; // z drawn last as handle
+      const p = toPx(c);
+      if (Math.abs(p.x - cx) > W || Math.abs(p.y - cy) > H) return;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? C.w : C.spiral; ctx.fill();
+      ctx.fillStyle = C.muted; ctx.font = '12px JetBrains Mono, monospace';
+      ctx.fillText('z' + (i === 0 ? '⁰' : '^' + i), p.x + 7, p.y - 6);
+    });
+    vector(z, C.z, 'z');
+
+    document.getElementById('sideTitle').textContent = 'Hatványok';
+    let rows = '<span class="z">z = ' + fmtC(z) + '   |z| = ' + fmt(cabs(z)) + '   arg z = ' + fmt(deg(carg(z)), 1) + '°</span><br>';
+    let acc2 = { re: 1, im: 0 };
+    for (let k = 1; k <= 5; k++) {
+      acc2 = cmul(acc2, z);
+      rows += 'z^' + k + ' = ' + fmtC(acc2) + '<br>';
+    }
+    document.getElementById('infoBox').innerHTML = rows;
+    document.getElementById('hintBox').textContent =
+      'A hatványok spirált rajzolnak: minden lépés ugyanannyival forgat és ugyanannyiszorosára nyújt.';
+  }
+
+  function drawRoots() {
+    drawBase();
+    const pts = [];
+    for (let k = 0; k < n; k++) {
+      const a = 2 * Math.PI * k / n;
+      pts.push({ re: Math.cos(a), im: Math.sin(a) });
+    }
+    // polygon
+    ctx.strokeStyle = C.spiral; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    pts.forEach((c, i) => {
+      const p = toPx(c);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    });
+    ctx.closePath(); ctx.stroke();
+    pts.forEach((c, i) => {
+      const p = toPx(c);
+      ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? C.zw : C.z; ctx.fill();
+      ctx.strokeStyle = '#171209'; ctx.lineWidth = 2; ctx.stroke();
+    });
+
+    document.getElementById('sideTitle').textContent = 'zⁿ = 1 megoldásai';
+    let rows = '';
+    for (let k = 0; k < Math.min(n, 6); k++) {
+      const a = 360 * k / n;
+      rows += 'ε' + subscript(k) + ' = cos ' + fmt(a, 1) + '° + i·sin ' + fmt(a, 1) + '°<br>';
+    }
+    if (n > 6) rows += '…<br>';
+    rows += '<br>Összegük: <span class="zw">0</span> (n ≥ 2 esetén)';
+    document.getElementById('infoBox').innerHTML = rows;
+    document.getElementById('hintBox').textContent =
+      'Az n-edik egységgyökök szabályos n-szöget alkotnak az egységkörön. Az első csúcs mindig az 1.';
+  }
+
+  function subscript(k) {
+    const map = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉' };
+    return String(k).split('').map(d => map[d]).join('');
+  }
+
+  function draw() {
+    if (mode === 'mul') drawMul();
+    else if (mode === 'pow') drawPow();
+    else drawRoots();
+  }
+
+  // ---- dragging ----
+  function canvasPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width, scaleY = canvas.height / r.height;
+    return { x: (e.clientX - r.left) * scaleX, y: (e.clientY - r.top) * scaleY };
+  }
+  canvas.addEventListener('pointerdown', e => {
+    if (mode === 'roots') return;
+    const m = canvasPos(e);
+    const candidates = mode === 'mul' ? [['z', z], ['w', w]] : [['z', z]];
+    let best = null, bestD = 30;
+    candidates.forEach(([name, c]) => {
+      const p = toPx(c);
+      const d = Math.hypot(p.x - m.x, p.y - m.y);
+      if (d < bestD) { best = name; bestD = d; }
+    });
+    // if nothing close, grab z anyway (mobile-friendly)
+    dragging = best || (mode === 'pow' ? 'z' : null);
+    if (dragging) {
+      canvas.setPointerCapture(e.pointerId);
+      moveTo(m);
+    }
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    moveTo(canvasPos(e));
+  });
+  canvas.addEventListener('pointerup', () => { dragging = null; });
+  function moveTo(m) {
+    const c = toC(m.x, m.y);
+    // snap to grid quarters for readable numbers
+    c.re = Math.round(c.re * 4) / 4;
+    c.im = Math.round(c.im * 4) / 4;
+    if (dragging === 'z') z = c; else if (dragging === 'w') w = c;
+    draw();
+  }
+
+  // ---- mode switching ----
+  const btns = { mul: document.getElementById('mMul'), pow: document.getElementById('mPow'), roots: document.getElementById('mRoots') };
+  Object.entries(btns).forEach(([m, b]) => {
+    b.addEventListener('click', () => {
+      mode = m;
+      Object.values(btns).forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('nCtrl').style.display = (m === 'roots') ? 'block' : 'none';
+      if (m === 'pow' && cabs(z) > 1.6) z = { re: 1, im: 0.5 }; // keep spiral on screen
+      draw();
+    });
+  });
+  document.getElementById('nSlider').addEventListener('input', e => {
+    n = parseInt(e.target.value, 10);
+    document.getElementById('nVal').textContent = n;
+    draw();
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>
