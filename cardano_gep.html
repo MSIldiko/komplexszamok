@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="hu">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0087)https://id-preview-%2Dcc5f97df-fdbe-447c-817b-278ca267718d.lovable.app/cardano_gep.html -->
+<html lang="hu"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cardano-gép — a harmadfokú egyenlet és a casus irreducibilis</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./Cardano_gep_files/css2" rel="stylesheet">
 <style>
   :root {
     --bg: #171209;
@@ -54,7 +54,28 @@
     border-radius: 10px;
     padding: 0.9rem;
     margin-bottom: 1.2rem;
+    transition: background 0.25s, border-color 0.25s;
   }
+  .eq-display.eq-casus { background: rgba(217, 106, 74, 0.12); border-color: var(--danger); }
+  .eq-display.eq-ok    { background: rgba(154, 184, 106, 0.10); border-color: var(--ok); }
+  .rootpill {
+    display: inline-block;
+    margin-left: 0.6rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    vertical-align: middle;
+    border: 1px solid currentColor;
+    opacity: 0.95;
+  }
+  .rootpill.three { color: var(--danger); }
+  .rootpill.one   { color: var(--ok); }
+  .disc-val { font-weight: 600; padding: 0 0.3rem; border-radius: 4px; }
+  .disc-val.neg { color: var(--danger); background: rgba(217, 106, 74, 0.14); }
+  .disc-val.pos { color: var(--ok);     background: rgba(154, 184, 106, 0.14); }
+  .disc-val.zero{ color: var(--amber-bright); }
   .controls {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -167,16 +188,16 @@
   <h1>Cardano-gép</h1>
   <p class="subtitle">Állítsd a p és q értékét, és figyeld, mikor mond csődöt a képlet — pedig az egyenletnek van gyöke.</p>
 
-  <div class="eq-display" id="eqDisplay">x³ − 15x − 4 = 0</div>
+  <div class="eq-display eq-ok" id="eqDisplay">x³ − 6x − 9 = 0<span id="rootPill" class="rootpill one">1 valós gyök · D &gt; 0</span></div>
 
   <div class="controls">
     <div class="ctrl">
-      <label for="pSlider">p = <span id="pVal">−15</span></label>
+      <label for="pSlider">p = <span id="pVal">−6</span></label>
       <input type="number" id="pNum" step="0.5" value="-15" min="-30" max="30" aria-label="p értéke">
       <input type="range" id="pSlider" min="-30" max="30" step="0.5" value="-15">
     </div>
     <div class="ctrl">
-      <label for="qSlider">q = <span id="qVal">−4</span></label>
+      <label for="qSlider">q = <span id="qVal">−9</span></label>
       <input type="number" id="qNum" step="0.5" value="-4" min="-30" max="30" aria-label="q értéke">
       <input type="range" id="qSlider" min="-30" max="30" step="0.5" value="-4">
     </div>
@@ -194,20 +215,20 @@
 
     <div class="steps">
       <h2>A képlet lépései</h2>
-      <div class="step"><span class="lbl">x = u + v alakban keressük, ahol</span><span class="val" id="stepUV">3uv = −p, azaz uv = 5</span></div>
-      <div class="step"><span class="lbl">és</span><span class="val" id="stepSum">u³ + v³ = −q = 4</span></div>
-      <div class="step"><span class="lbl">u³ és v³ ezért ennek a másodfokúnak a gyökei:</span><span class="val" id="stepQuad">t² − 4t + 125 = 0</span></div>
-      <div class="step"><span class="lbl">a másodfokú diszkriminánsa</span><span class="val" id="stepDisc">D = (q/2)² + (p/3)³ = −121</span></div>
-      <div class="step"><span class="lbl">tehát</span><span class="val" id="stepT">u³ = 2 + 11i&nbsp;&nbsp;(11 = √121)</span></div>
+      <div class="step"><span class="lbl">x = u + v alakban keressük, ahol</span><span class="val" id="stepUV">3uv = 6,  azaz  uv = 2</span></div>
+      <div class="step"><span class="lbl">és</span><span class="val" id="stepSum">u³ + v³ = 9</span></div>
+      <div class="step"><span class="lbl">u³ és v³ ezért ennek a másodfokúnak a gyökei:</span><span class="val" id="stepQuad">t² − 9t + 8 = 0</span></div>
+      <div class="step"><span class="lbl">a másodfokú diszkriminánsa</span><span class="val" id="stepDisc">D = (q/2)² + (p/3)³ = <span class="disc-val pos">12.25</span></span></div>
+      <div class="step"><span class="lbl">tehát</span><span class="val" id="stepT">u³ = 8,  v³ = 1  →  x = 3</span></div>
 
-      <div class="badge casus" id="badgeCasus">
+      <div class="badge casus" id="badgeCasus" style="display: none;">
         <b>CASUS IRREDUCIBILIS.</b> A képlet negatív szám négyzetgyökét kéri — miközben a grafikonon <span id="casusRootCount">három</span> valós gyök látszik.
       </div>
-      <div class="badge ok" id="badgeOk">
+      <div class="badge ok" id="badgeOk" style="display: block;">
         <b>SIMA ESET.</b> D ≥ 0, a képlet valós számokon belül végigvihető, és az egyetlen valós gyököt adja.
       </div>
 
-      <div class="roots-line" id="rootsLine"></div>
+      <div class="roots-line" id="rootsLine">Valós gyökök a grafikonról: 3</div>
     </div>
   </div>
 </div>
@@ -346,8 +367,8 @@
     const pv = fmt(p, 2), qv = fmt(q, 2);
     document.getElementById('pVal').textContent = pv;
     document.getElementById('qVal').textContent = qv;
-    document.getElementById('eqDisplay').textContent =
-      'x³' + fmtCoef(p, 'x') + fmtCoef(q, '') + ' = 0';
+    document.getElementById('eqDisplay').innerHTML =
+      'x³' + fmtCoef(p, 'x') + fmtCoef(q, '') + ' = 0<span id="rootPill" class="rootpill"></span>';
 
     const uv = -p / 3;
     const sum = -q;
@@ -357,7 +378,25 @@
     document.getElementById('stepSum').textContent = 'u³ + v³ = ' + fmt(sum, 2);
     document.getElementById('stepQuad').textContent =
       't²' + fmtCoef(q, 't') + fmtCoef(-Math.pow(p / 3, 3), '') + ' = 0';
-    document.getElementById('stepDisc').textContent = 'D = (q/2)² + (p/3)³ = ' + fmt(D, 3);
+    const dCls = D < -1e-12 ? 'neg' : (D > 1e-12 ? 'pos' : 'zero');
+    document.getElementById('stepDisc').innerHTML =
+      'D = (q/2)² + (p/3)³ = <span class="disc-val ' + dCls + '">' + fmt(D, 3) + '</span>';
+
+    const eq = document.getElementById('eqDisplay');
+    eq.classList.remove('eq-casus', 'eq-ok');
+    eq.classList.add(D < -1e-12 ? 'eq-casus' : 'eq-ok');
+
+    const pill = document.getElementById('rootPill');
+    if (D < -1e-12) {
+      pill.className = 'rootpill three';
+      pill.textContent = '3 valós gyök · D < 0';
+    } else if (D > 1e-12) {
+      pill.className = 'rootpill one';
+      pill.textContent = '1 valós gyök · D > 0';
+    } else {
+      pill.className = 'rootpill one';
+      pill.textContent = 'határeset · D = 0';
+    }
 
     const badgeC = document.getElementById('badgeCasus');
     const badgeO = document.getElementById('badgeOk');
@@ -408,5 +447,6 @@
   draw();
 })();
 </script>
-</body>
-</html>
+
+
+</body></html>

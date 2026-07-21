@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<!-- saved from url=(0088)https://id-preview-%2Dcc5f97df-fdbe-447c-817b-278ca267718d.lovable.app/casus_terkep.html -->
+<html lang="hu"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casus irreducibilis-térkép — a (p, q) sík</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./Casus_irreducibilis_map_files/css2" rel="stylesheet">
+<style>
+  :root {
+    --bg:#171209; --panel:#211a0f; --panel2:#2a2114; --border:#4a3b22;
+    --amber:#d9a44a; --amber-bright:#f0c060; --text:#ece0c8; --muted:#a8977a;
+    --danger:#d96a4a; --ok:#9ab86a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family:'Crimson Pro',Georgia,serif; font-size:19px; line-height:1.55; padding:2rem 1rem 4rem; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-family:'Cinzel',serif; font-weight:700; color:var(--amber); font-size:clamp(1.5rem,4vw,2.3rem); text-align:center; letter-spacing:.04em; }
+  .subtitle { text-align:center; color:var(--muted); font-style:italic; margin:.4rem 0 1.6rem; }
+  .lead { max-width:760px; margin:0 auto 1.6rem; text-align:center; color:var(--text); }
+  .lead b { color: var(--amber-bright); }
+  .main { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:1.2rem; align-items:start; }
+  @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.1rem; }
+  .panel h2 { font-family:'Cinzel',serif; font-size:1rem; color:var(--amber); letter-spacing:.05em; margin-bottom:.6rem; }
+  canvas { width:100%; background:var(--panel); border:1px solid var(--border); border-radius:10px; display:block; touch-action:none; cursor:crosshair; }
+  .info { font-family:'JetBrains Mono',monospace; font-size:.98rem; color:var(--text); margin-top:.6rem; }
+  .info .row { display:flex; justify-content:space-between; padding:.25rem 0; border-bottom:1px dashed var(--border); }
+  .info .row:last-child { border-bottom:none; }
+  .info .k { color:var(--muted); }
+  .info .v { color:var(--amber-bright); }
+  .badge { display:block; margin-top:.8rem; padding:.6rem .8rem; border-radius:8px; font-size:.98rem; }
+  .badge.casus { background: rgba(217,106,74,.12); border:1px solid var(--danger); color:#f0b7a4; }
+  .badge.ok    { background: rgba(154,184,106,.10); border:1px solid var(--ok); color:#cfe0ae; }
+  .badge b { font-family:'Cinzel',serif; letter-spacing:.04em; }
+  .legend { display:flex; gap:1.2rem; justify-content:center; margin:.7rem 0 0; font-size:.9rem; color:var(--muted); }
+  .legend span::before { content:''; display:inline-block; width:14px; height:14px; margin-right:.4rem; vertical-align:-2px; border-radius:3px; }
+  .legend .three::before { background: rgba(217,106,74,.35); border:1px solid var(--danger); }
+  .legend .one::before   { background: rgba(154,184,106,.20); border:1px solid var(--ok); }
+  .legend .curve::before { background: var(--amber-bright); }
+  .presets { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; margin:1rem 0 1.2rem; }
+  .presets button { font-family:'JetBrains Mono',monospace; font-size:.88rem; background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:999px; padding:.32rem .85rem; cursor:pointer; transition:all .15s; }
+  .presets button:hover { border-color:var(--amber); color:var(--amber-bright); }
+  .backlink { display:block; text-align:center; margin-top:1.6rem; color:var(--muted); font-size:.9rem; }
+  .backlink a { color:var(--amber); text-decoration:none; border-bottom:1px dotted var(--amber); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Casus irreducibilis-térkép</h1>
+  <p class="subtitle">Hol van az a határ, ahol a Cardano-képlet negatív számból kénytelen gyököt vonni?</p>
+  <p class="lead">
+    Az <span style="font-family:&#39;JetBrains Mono&#39;,monospace">x³ + p·x + q = 0</span> egyenletnek egyetlen <b>(p, q)</b> pont felel meg a
+    síkon. Kattints bárhova a bal oldali térképen — és nézd meg,
+    hány valós gyöke van a megfelelő egyenletnek. <br> A narancssárga görbe a <b>4p³ + 27q² = 0</b>
+    <i>diszkrimináns-görbe</i>: pontosan itt billen át az egyenlet 1 és 3 valós gyök között.
+  </p>
+
+  <div class="presets">
+    <button data-p="-15" data-q="-4">a botrány (−15, −4)</button>
+    <button data-p="-6" data-q="-9">barátságos (−6, −9)</button>
+    <button data-p="-7" data-q="0">három gyök, szimmetrikusan (−7, 0)</button>
+    <button data-p="3" data-q="-4">1 gyök (3, −4)</button>
+    <button data-p="-3" data-q="2">épp a görbén (−3, 2)</button>
+  </div>
+
+  <div class="main">
+    <div>
+      <canvas id="mapCanvas" width="560" height="560" aria-label="A (p,q) sík a diszkrimináns-görbével"></canvas>
+      <div class="legend">
+        <span class="three">3 valós gyök</span>
+        <span class="one">1 valós gyök</span>
+        <span class="curve">D-görbe</span>
+      </div>
+    </div>
+    <div>
+      <canvas id="graphCanvas" width="560" height="420" aria-label="A kiválasztott harmadfokú függvény grafikonja"></canvas>
+      <div class="panel" style="margin-top:.9rem;">
+        <h2>A kiválasztott egyenlet</h2>
+        <div class="info">
+          <div class="row"><span class="k">egyenlet</span><span class="v" id="eqTxt">x³ − 7.2x + 4.7 = 0</span></div>
+          <div class="row"><span class="k">p</span><span class="v" id="pTxt">−7.2</span></div>
+          <div class="row"><span class="k">q</span><span class="v" id="qTxt">4.7</span></div>
+          <div class="row"><span class="k">D = (q/2)² + (p/3)³</span><span class="v" id="dTxt" style="color: rgb(217, 106, 74);">−8.301</span></div>
+          <div class="row"><span class="k">valós gyökök</span><span class="v" id="rootsTxt">−2.964,  0.701,  2.264   (3 db)</span></div>
+        </div>
+        <div class="badge ok" id="badgeOk" style="display: none;">
+          <b>SIMA ESET.</b> D ≥ 0 <br> a Cardano-képlet valós számokon belül megadja a valós gyököt.
+        </div>
+        <div class="badge casus" id="badgeCasus" style="display: block;">
+          <b>CASUS IRREDUCIBILIS.</b> D &lt; 0 <br> a képletben negatív számból kell gyököt vonni, pedig három valós gyök van.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const mapC = document.getElementById('mapCanvas');
+  const mapX = mapC.getContext('2d');
+  const grC  = document.getElementById('graphCanvas');
+  const grX  = grC.getContext('2d');
+
+  // (p,q) plane view
+  const PMIN=-18, PMAX=18, QMIN=-18, QMAX=18;
+  let p = -15, q = -4;
+
+  const C = { grid:'#2e2515', axis:'#5a4a2c', muted:'#a8977a', amber:'#d9a44a',
+              amberBright:'#f0c060', danger:'#d96a4a', ok:'#9ab86a', curve:'#f0c060', root:'#f0c060' };
+
+  function fmt(x, d) { d = d===undefined?3:d; const r = Math.round(x*Math.pow(10,d))/Math.pow(10,d);
+    return (Object.is(r,-0)?0:r).toString().replace('-','−'); }
+  function fmtCoef(v, sym){ if(v===0) return ''; const s=v>0?' + ':' − '; const a=Math.abs(v);
+    const num=(sym&&a===1)?'':fmt(a); return s+num+(sym||''); }
+
+  // ----- (p,q) map -----
+  function drawMap() {
+    const W = mapC.width, H = mapC.height;
+    mapX.clearRect(0,0,W,H);
+    const sx = pp => (pp - PMIN) / (PMAX - PMIN) * W;
+    const sy = qq => H - (qq - QMIN) / (QMAX - QMIN) * H;
+
+    // fill regions using ImageData (fast enough for 560²)
+    const img = mapX.createImageData(W, H);
+    for (let py = 0; py < H; py++) {
+      const qq = QMIN + (1 - py/H) * (QMAX - QMIN);
+      for (let px = 0; px < W; px++) {
+        const pp = PMIN + (px/W) * (PMAX - PMIN);
+        const D = (qq/2)*(qq/2) + Math.pow(pp/3, 3);
+        const i = (py*W + px) * 4;
+        if (D < 0) {
+          img.data[i]=217; img.data[i+1]=106; img.data[i+2]=74; img.data[i+3]=90;
+        } else {
+          img.data[i]=154; img.data[i+1]=184; img.data[i+2]=106; img.data[i+3]=52;
+        }
+      }
+    }
+    mapX.putImageData(img, 0, 0);
+
+    // grid
+    mapX.strokeStyle = C.grid; mapX.lineWidth = 1;
+    for (let g = Math.ceil(PMIN/3)*3; g <= PMAX; g += 3) {
+      mapX.beginPath(); mapX.moveTo(sx(g),0); mapX.lineTo(sx(g),H); mapX.stroke();
+    }
+    for (let g = Math.ceil(QMIN/3)*3; g <= QMAX; g += 3) {
+      mapX.beginPath(); mapX.moveTo(0,sy(g)); mapX.lineTo(W,sy(g)); mapX.stroke();
+    }
+    // axes
+    mapX.strokeStyle = C.axis; mapX.lineWidth = 1.5;
+    mapX.beginPath(); mapX.moveTo(0,sy(0)); mapX.lineTo(W,sy(0)); mapX.stroke();
+    mapX.beginPath(); mapX.moveTo(sx(0),0); mapX.lineTo(sx(0),H); mapX.stroke();
+
+    // axis labels
+    mapX.fillStyle = C.muted; mapX.font = "12px 'JetBrains Mono', monospace";
+    mapX.fillText('p', W-14, sy(0)-6);
+    mapX.fillText('q', sx(0)+6, 14);
+    for (let g = Math.ceil(PMIN/6)*6; g <= PMAX; g += 6) if (g!==0) mapX.fillText(String(g).replace('-','−'), sx(g)+2, sy(0)+12);
+    for (let g = Math.ceil(QMIN/6)*6; g <= QMAX; g += 6) if (g!==0) mapX.fillText(String(g).replace('-','−'), sx(0)+4, sy(g)-2);
+
+    // discriminant curve: 4p³ + 27q² = 0 → q = ±√(-4p³/27), p ≤ 0
+    mapX.strokeStyle = C.curve; mapX.lineWidth = 2.5;
+    for (const sign of [+1, -1]) {
+      mapX.beginPath();
+      let started = false;
+      for (let px = 0; px <= W; px++) {
+        const pp = PMIN + (px/W)*(PMAX-PMIN);
+        if (pp > 0) { started = false; continue; }
+        const qq = sign * Math.sqrt(-4*pp*pp*pp/27);
+        if (qq < QMIN || qq > QMAX) { started = false; continue; }
+        const Y = sy(qq);
+        if (!started) { mapX.moveTo(sx(pp), Y); started = true; }
+        else mapX.lineTo(sx(pp), Y);
+      }
+      mapX.stroke();
+    }
+    // cusp at origin
+    mapX.fillStyle = C.curve; mapX.beginPath(); mapX.arc(sx(0), sy(0), 3, 0, Math.PI*2); mapX.fill();
+
+    // selected point
+    mapX.beginPath(); mapX.arc(sx(p), sy(q), 7, 0, Math.PI*2);
+    mapX.fillStyle = '#ffffff'; mapX.fill();
+    mapX.strokeStyle = '#171209'; mapX.lineWidth = 2; mapX.stroke();
+    // crosshair
+    mapX.strokeStyle = 'rgba(255,255,255,0.35)'; mapX.lineWidth = 1;
+    mapX.beginPath(); mapX.moveTo(sx(p),0); mapX.lineTo(sx(p),H); mapX.stroke();
+    mapX.beginPath(); mapX.moveTo(0,sy(q)); mapX.lineTo(W,sy(q)); mapX.stroke();
+  }
+
+  // ----- Real roots of x³ + p x + q -----
+  function cubicRoots(p, q) {
+    const f = x => x*x*x + p*x + q;
+    const B = Math.max(3, 1 + Math.max(Math.abs(p), Math.abs(q)));
+    const N = 4000, roots = [];
+    let x0 = -B, f0 = f(x0);
+    for (let k = 1; k <= N; k++) {
+      const x1 = -B + (2*B*k)/N, f1 = f(x1);
+      if (f0 === 0) roots.push(x0);
+      else if (f0 * f1 < 0) {
+        let a=x0, b=x1;
+        for (let it=0; it<80; it++) { const m=(a+b)/2; (f(a)*f(m)<=0)?(b=m):(a=m); }
+        roots.push((a+b)/2);
+      }
+      x0=x1; f0=f1;
+    }
+    const out = [];
+    roots.sort((a,b)=>a-b).forEach(r=>{ if(!out.length||Math.abs(r-out[out.length-1])>1e-6) out.push(r); });
+    return out;
+  }
+
+  // ----- Graph of x³ + p x + q -----
+  function drawGraph() {
+    const W = grC.width, H = grC.height;
+    grX.clearRect(0,0,W,H);
+    const roots = cubicRoots(p, q);
+    const xr = 6.5;
+    let ymax = 1;
+    for (let x=-xr; x<=xr; x+=0.05) ymax = Math.max(ymax, Math.abs(x*x*x + p*x + q));
+    ymax = Math.min(ymax, 120);
+    const yr = ymax * 1.08;
+    const sx = x => (x + xr)/(2*xr) * W;
+    const sy = y => H - (y + yr)/(2*yr) * H;
+
+    grX.strokeStyle = C.grid; grX.lineWidth = 1;
+    for (let gx = Math.ceil(-xr); gx <= xr; gx++) { grX.beginPath(); grX.moveTo(sx(gx),0); grX.lineTo(sx(gx),H); grX.stroke(); }
+    const ystep = yr > 60 ? 20 : yr > 24 ? 10 : 5;
+    for (let gy = Math.ceil(-yr/ystep)*ystep; gy <= yr; gy += ystep) {
+      grX.beginPath(); grX.moveTo(0,sy(gy)); grX.lineTo(W,sy(gy)); grX.stroke();
+    }
+    grX.strokeStyle = C.axis; grX.lineWidth = 1.5;
+    grX.beginPath(); grX.moveTo(0,sy(0)); grX.lineTo(W,sy(0)); grX.stroke();
+    grX.beginPath(); grX.moveTo(sx(0),0); grX.lineTo(sx(0),H); grX.stroke();
+
+    grX.fillStyle = C.muted; grX.font = "12px 'JetBrains Mono', monospace";
+    for (let gx = Math.ceil(-xr)+1; gx <= xr-1; gx++) if (gx!==0) grX.fillText(String(gx).replace('-','−'), sx(gx)+3, sy(0)-4);
+
+    grX.strokeStyle = '#e8c87a'; grX.lineWidth = 2.5;
+    grX.beginPath();
+    let started = false;
+    for (let px=0; px<=W; px++) {
+      const x = -xr + (2*xr*px)/W;
+      const y = x*x*x + p*x + q;
+      const Y = sy(y);
+      if (Y < -50 || Y > H+50) { started = false; continue; }
+      if (!started) { grX.moveTo(px,Y); started = true; } else grX.lineTo(px,Y);
+    }
+    grX.stroke();
+
+    roots.forEach(r=>{
+      if (Math.abs(r) > xr) return;
+      grX.beginPath(); grX.arc(sx(r), sy(0), 6, 0, Math.PI*2);
+      grX.fillStyle = C.root; grX.fill();
+      grX.strokeStyle = '#171209'; grX.lineWidth = 2; grX.stroke();
+      grX.fillStyle = C.amberBright;
+      grX.font = "13px 'JetBrains Mono', monospace";
+      grX.fillText(fmt(r,3), sx(r)+8, sy(0)+18);
+    });
+
+    // panel
+    const D = (q/2)*(q/2) + Math.pow(p/3,3);
+    document.getElementById('eqTxt').textContent = 'x³' + fmtCoef(p,'x') + fmtCoef(q,'') + ' = 0';
+    document.getElementById('pTxt').textContent = fmt(p,3);
+    document.getElementById('qTxt').textContent = fmt(q,3);
+    const dEl = document.getElementById('dTxt');
+    dEl.textContent = fmt(D,3);
+    dEl.style.color = D < -1e-9 ? C.danger : (D > 1e-9 ? C.ok : C.amberBright);
+    document.getElementById('rootsTxt').textContent =
+      roots.length ? roots.map(r=>fmt(r,3)).join(',  ') + '   (' + roots.length + ' db)' : '—';
+    document.getElementById('badgeOk').style.display    = D >= -1e-9 ? 'block' : 'none';
+    document.getElementById('badgeCasus').style.display = D <  -1e-9 ? 'block' : 'none';
+  }
+
+  function redraw(){ drawMap(); drawGraph(); }
+
+  // interaction
+  let dragging = false;
+  function pickFromEvent(e) {
+    const rect = mapC.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    const cx = (t.clientX - rect.left) / rect.width * mapC.width;
+    const cy = (t.clientY - rect.top)  / rect.height * mapC.height;
+    p = PMIN + cx / mapC.width * (PMAX - PMIN);
+    q = QMIN + (1 - cy / mapC.height) * (QMAX - QMIN);
+    p = Math.round(p*10)/10; q = Math.round(q*10)/10;
+    redraw();
+  }
+  mapC.addEventListener('pointerdown', e=>{ dragging = true; mapC.setPointerCapture(e.pointerId); pickFromEvent(e); });
+  mapC.addEventListener('pointermove', e=>{ if (dragging) pickFromEvent(e); });
+  mapC.addEventListener('pointerup',   e=>{ dragging = false; });
+
+  document.querySelectorAll('.presets button').forEach(b=>{
+    b.addEventListener('click', ()=>{ p = parseFloat(b.dataset.p); q = parseFloat(b.dataset.q); redraw(); });
+  });
+
+  redraw();
+})();
+</script>
+
+
+</body></html>
